@@ -1,0 +1,74 @@
+{
+  "engine": "markdown-memory-orca",
+  "date": "2026-11-24",
+  "node": "v24.22.1",
+  "budget_chars": 4200,
+  "fixtures": [
+    {
+      "fixture": "small",
+      "current_md_chars": 721,
+      "injected_chars": 1381,
+      "injected_tokens_estimate_chars_div_4": 346,
+      "hash": "576d141848e5",
+      "byte_stable_across_10_calls": true,
+      "hash_changes_after_edit": true,
+      "timing_cached_ms": {
+        "median_ms": 0.013,
+        "min_ms": 0.012,
+        "max_ms": 0.036,
+        "runs": 20
+      },
+      "timing_uncached_ms": {
+        "median_ms": 0.017,
+        "min_ms": 0.016,
+        "max_ms": 0.177,
+        "runs": 5
+      }
+    },
+    {
+      "fixture": "medium",
+      "current_md_chars": 2221,
+      "injected_chars": 2881,
+      "injected_tokens_estimate_chars_div_4": 721,
+      "hash": "1f67ff954689",
+      "byte_stable_across_10_calls": true,
+      "hash_changes_after_edit": true,
+      "timing_cached_ms": {
+        "median_ms": 0.012,
+        "min_ms": 0.011,
+        "max_ms": 0.028,
+        "runs": 20
+      },
+      "timing_uncached_ms": {
+        "median_ms": 0.038,
+        "min_ms": 0.018,
+        "max_ms": 0.131,
+        "runs": 5
+      }
+    },
+    {
+      "fixture": "large",
+      "current_md_chars": 4021,
+      "injected_chars": 4200,
+      "injected_tokens_estimate_chars_div_4": 1050,
+      "hash": "496ce90f4214",
+      "byte_stable_across_10_calls": true,
+      "hash_changes_after_edit": true,
+      "timing_cached_ms": {
+        "median_ms": 0.01,
+        "min_ms": 0.01,
+        "max_ms": 0.011,
+        "runs": 20
+      },
+      "timing_uncached_ms": {
+        "median_ms": 0.017,
+        "min_ms": 0.012,
+        "max_ms": 0.141,
+        "runs": 5
+      }
+    }
+  ],
+  "empty_memory": {
+    "injection": null
+  }
+}

@@ -53,7 +53,12 @@ export function save(
   const status: Status = args.status ?? "confirmed"
   initProject(paths, ref, ts)
   const sessionRef = args.sessionID ? ` session:${args.sessionID.slice(0, 12)}` : ""
-  appendFileSync(join(ref.path, "HISTORY.md"), `\n## ${ts} ${args.kind} ${status}${sessionRef}\n${args.content.trim()}\n`)
+  // HISTORY is appended only AFTER the CURRENT.md write succeeds. An earlier
+  // version appended it first, so a failed save (unknown supersede target,
+  // missing Decisions table / section) still left a HISTORY entry claiming
+  // something was saved (fixed 2026-11-24; see the regression test).
+  const appendHistory = () =>
+    appendFileSync(join(ref.path, "HISTORY.md"), `\n## ${ts} ${args.kind} ${status}${sessionRef}\n${args.content.trim()}\n`)
 
   const currentPath = join(ref.path, "CURRENT.md")
   let current = readFileSync(currentPath, "utf8")
@@ -77,6 +82,7 @@ export function save(
     current = current.replace(re, (m) => `${m}${row}\n`)
     current = touchUpdated(current, ts)
     writeFileSync(currentPath, current)
+    appendHistory()
     return `saved decision ${id} (${status}) to ${ref.slug}/CURRENT.md + HISTORY.md${args.supersedes ? `; ${args.supersedes} marked superseded by ${id}` : ""}`
   }
 
@@ -87,6 +93,7 @@ export function save(
   current = current.replace(re, `$1\n${bullet}\n`)
   current = touchUpdated(current, ts)
   writeFileSync(currentPath, current)
+  appendHistory()
   return `saved ${args.kind} (${status}) to ${ref.slug}/CURRENT.md#${section} + HISTORY.md`
 }
 

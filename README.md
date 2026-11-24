@@ -1,5 +1,9 @@
 # markdown-memory-orca
 
+![Project banner](assets/banner.svg)
+
+[How it works](docs/HOW_IT_WORKS.md) · [Benchmark evidence](docs/BENCHMARKS.md) · [RTK and Graphify comparison](docs/COMPARISON.md)
+
 Shared file-based external memory for AI coding agents.
 
 **What is it:** an agent plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
@@ -8,7 +12,9 @@ Shared file-based external memory for AI coding agents.
 
 **Goal:** compact role-aware project memory (CURRENT / HISTORY / ARCHIVE per project, GLOBAL preferences), deterministic updates with no extra LLM calls, on-demand retrieval, byte-stable injection so provider prompt caches keep hitting, reversible per-project install.
 
-**Impact:** ~200-token injection vs a ~12k-token native system prompt; cross-session prompt-cache hits verified on opencode-go; decisions persist with explicit supersede (never silently overwritten); 12 unit tests + 19 reliability checks including real compaction and cross-project isolation.
+**Impact:** ~200-token injection vs a ~12k-token native system prompt; cross-session prompt-cache hits verified on opencode-go; decisions persist with explicit supersede (never silently overwritten); 14 unit tests + 19 reliability checks including real compaction and cross-project isolation.
+
+**Measured 2026-11-24 (reproducible fixtures, `benchmarks/`):** injected block 1,381 chars (~346 est. tokens) small, 2,881 (~721) medium, capped at 4,200 (~1,050) large; byte-stable across 10 calls per fixture, hash busts on exactly one edit. Tokens are `ceil(chars/4)` estimates, not provider counts. The earlier 121–287-token range and the n=3 A/B (which measured *higher* cost with memory) are prior measurements, kept with their caveats in [Benchmark evidence](docs/BENCHMARKS.md).
 
 ## Not OpenCode-specific
 
@@ -84,7 +90,7 @@ OpenCode auto-loads every plugin in `~/.config/opencode/plugins/`. One symlink
 activates memory everywhere, with no per-project configuration:
 
 ```sh
-ln -sfn ~/code/opencode-memory/plugin/memory-engine.ts ~/.config/opencode/plugins/markdown-memory.ts
+ln -sfn ~/code/markdown-memory-orca/plugin/memory-engine.ts ~/.config/opencode/plugins/markdown-memory.ts
 ```
 
 Back up that directory first (`cp -R ~/.config/opencode/plugins ~/.config/opencode-backups/`).
@@ -112,7 +118,7 @@ In the project's `opencode.json`:
 
 ```json
 {
-  "plugin": [["~/code/opencode-memory/plugin/memory-engine.ts", { "memoryRoot": "~/memory" }]]
+  "plugin": [["~/code/markdown-memory-orca/plugin/memory-engine.ts", { "memoryRoot": "~/memory" }]]
 }
 ```
 
@@ -127,9 +133,9 @@ under `~/memory` are never deleted by the plugin (HISTORY is append-only).
 
 ## Behavior notes
 
-- Injection is byte-identical until a source file changes (content-hash cache,
-  mtime-gated reads) — required for provider prompt-cache hits; verified
-  against opencode-go (`cache.read` in session tokens).
+- Injection is byte-identical until a source file changes (the block carries a
+  SHA-1 hash; re-reads are gated on file mtime+size) — required for provider
+  prompt-cache hits; verified against opencode-go (`cache.read` in session tokens).
 - The plugin hook fires twice per request in opencode 1.19.6; a guard keeps
   exactly one block.
 - `experimental.session.compacting` adds a preservation instruction to the
@@ -184,7 +190,7 @@ usage rather than claimed from this micro-benchmark.
 ### Reproduce
 
 ```sh
-node --test test/     # 13 unit tests
+node --test test/     # 14 unit tests (or: npm install && npm test)
 ./test/phase4.sh      # 19 reliability checks
 ./test/phase5.sh      # A/B benchmark (writes to testbed only)
 ```
@@ -192,5 +198,10 @@ node --test test/     # 13 unit tests
 ## Tests
 
 ```sh
-node --test test/
+npm install   # first time: installs @opencode-ai/plugin + zod
+npm test      # node --test test/engine.test.ts
 ```
+
+## License
+
+MIT

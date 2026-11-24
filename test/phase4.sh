@@ -1,9 +1,9 @@
 #!/bin/zsh
-# Phase 4 reliability harness. Run from ~/code/opencode-memory.
+# Phase 4 reliability harness. Run from ~/code/markdown-memory-orca.
 set -uo pipefail
 PORT=4600
 BASE="http://127.0.0.1:$PORT"
-ROOT="$HOME/code/opencode-memory"
+ROOT="$HOME/code/markdown-memory-orca"
 TB="$ROOT/testbed"
 export MEMORY_ROOT="$TB/memory-root"
 METRICS="$TB/memory-root/.metrics/opencode.jsonl"

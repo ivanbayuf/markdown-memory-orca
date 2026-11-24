@@ -1,0 +1,1 @@
+{"dependencies":{"@opencode-ai/plugin":"^1.19.6","zod":"^4.6.7"},"description":"Shared file-based external memory for AI coding agents (OpenCode plugin).","engines":{"node":">=22"},"license":"MIT","name":"markdown-memory-orca","private":true,"scripts":{"bench":"node benchmarks/bench_orca.mjs","test":"node --test test/engine.test.ts"},"type":"module","version":"0.1.0"}
