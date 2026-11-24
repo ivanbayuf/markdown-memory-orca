@@ -161,8 +161,10 @@ test("initProject creates CURRENT and HISTORY on first write", () => {
 
 test("memoryPaths expands ~/ and resolves relative against worktree", async () => {
   const { memoryPaths } = await import("../plugin/lib/paths.ts")
+  const { join } = await import("node:path")
+  const { homedir } = await import("node:os")
   const p1 = memoryPaths({ memoryRoot: "~/memory", worktree: "/w" })
-  assert.ok(p1.root.startsWith("/Users/") && !p1.root.includes("~/"))
+  assert.equal(p1.root, join(homedir(), "memory"))
   const p2 = memoryPaths({ memoryRoot: "./m", worktree: "/w" })
   assert.equal(p2.root, "/w/m")
 })

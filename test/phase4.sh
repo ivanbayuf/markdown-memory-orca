@@ -74,10 +74,10 @@ CUR="$TB/memory-root/PROJECTS/testbed/CURRENT.md"
 step "E. cross-project isolation"
 mkdir -p "$ROOT/testbed2"
 git init -q "$ROOT/testbed2" 2>/dev/null
-cat > "$ROOT/testbed2/opencode.json" <<'EOF'
+cat > "$ROOT/testbed2/opencode.json" <<EOF
 {
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": [["/Users/ivanbayu/code/opencode-memory/plugin/memory-engine.ts", { "memoryRoot": "../testbed/memory-root" }]],
+  "\$schema": "https://opencode.ai/config.json",
+  "plugin": [["$ROOT/plugin/memory-engine.ts", { "memoryRoot": "../testbed/memory-root" }]],
   "model": "opencode-go/glm-5.3-flash"
 }
 EOF

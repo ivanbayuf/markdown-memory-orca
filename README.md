@@ -42,7 +42,7 @@ until approved for production):
 
 ```json
 {
-  "plugin": [["/Users/ivanbayu/code/opencode-memory/plugin/memory-engine.ts", { "memoryRoot": "~/memory" }]]
+  "plugin": [["~/code/opencode-memory/plugin/memory-engine.ts", { "memoryRoot": "~/memory" }]]
 }
 ```
 
