@@ -18,7 +18,11 @@ Measured on opencode-go / GLM-5.3-Flash, fixtures in `benchmarks/` (2026-11-24):
 
 Honest caveats: tokens are `ceil(chars/4)` estimates, not provider counts; cached tokens still cost ~10% of full price; and the n=3 A/B measured *higher* cost with memory — the pay-off is fewer re-orientation reads, tracked in real usage rather than claimed here. Full numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
+![Benchmark chart](assets/benchmark-chart.svg)
+
 ## How it works
+
+![Flow](assets/flow.svg)
 
 A loop of three moves over one folder of Markdown:
 
