@@ -52,7 +52,9 @@ def memory(*args):
 
 def status_json():
     out = memory("status")
-    return {"on": "OFF" not in out.stdout}
+    # bin/memory prints "memory: ON[, auto-inject: OFF]" — the engine state is
+    # the first segment; "OFF" also appears later when auto-inject is off.
+    return {"on": out.stdout.startswith("memory: ON")}
 
 
 class Handler(BaseHTTPRequestHandler):
