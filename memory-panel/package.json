@@ -1,0 +1,9 @@
+{
+  "name": "memory-panel",
+  "private": true,
+  "description": "Types only for tsc; Orca transpiles and runs the plugin sources directly.",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
