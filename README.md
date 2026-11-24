@@ -2,6 +2,23 @@
 
 Shared file-based external memory for AI coding agents.
 
+## Problem → Why → How
+
+**Problem.** A setup with many agents (UX bot, Dev bot, workers) across many sessions: every session starts blank. Each one re-reads files and re-derives context to orient — a ~12k-token native system prompt plus repeated exploration, paid again and again — and decisions made in one session or by one bot are lost to the next. Nothing persists; everything is re-derived or re-explained.
+
+**Why this solution** (and not the obvious alternatives):
+
+- *Re-explaining manually* (static CLAUDE.md-style notes) — works, but manual, so it goes stale, and agents cannot update it themselves.
+- *Embeddings/RAG database* — durable, but heavy: infra, indexing, non-deterministic recall, and unreadable to humans.
+- *Reuse the chat transcript* (the markdown-memory-hermes approach) — wrong layer for this host: opencode has no pre-send seam to drop history, and a transcript is noise, not knowledge. Amnesia *between* sessions is not a transcript problem.
+
+That pins the requirements the design must satisfy: agents write it themselves (else stale), saving/recall are deterministic scripts with zero LLM calls (else it costs and hallucinates), the store is plain markdown (readable, editable, greppable, committable), the injection is a tiny byte-stable prefix (~200 tokens, constant) so provider prompt caches keep hitting instead of re-billing, and everything fails open — broken memory can never break a session.
+
+**How.** Two independent layers:
+
+1. **Engine** (`plugin/lib/`) — pure TypeScript over markdown, knows nothing about opencode. Project resolution → `~/memory/PROJECTS/<slug>/`; `save/update/read/search` (append-only HISTORY, auto-incremented decision IDs with explicit supersede, term-score search); injection builder (role-filtered, mtime-cached, content-hashed).
+2. **Adapter** (thin, per host) — opencode hooks: inject the block before every request, nudge compaction to preserve decisions, register the `memory` tool. Mounting is one symlink; the on/off/auto markers (`bin/memory`, or the Orca Memory panel) toggle whether the engine loads at all.
+
 **What is it:** an agent plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
 
 **Problem:** agents restart with no durable knowledge; every session re-reads files to re-orient, bloating context, and decisions made in one session or by one bot are lost to the next.
@@ -94,17 +111,23 @@ per run: `MEMORY_ROOT=/tmp/mem-root opencode run …` (the env also beats
 
 ### Auto-run toggle
 
-Turn the global mount on or off for every future session — no symlink
-surgery, no restarts:
+Turn the engine on or off for every future session — no symlink surgery, no
+restarts. Two markers in the memory root decide the mode:
 
 ```sh
-bin/memory off      # new sessions stay fully native (marker: ~/memory/.disabled)
-bin/memory on       # re-enable
-bin/memory status
+bin/memory status     # memory: ON|OFF, auto-inject: ON|OFF
+bin/memory off        # no tool, no injection (marker: ~/memory/.disabled)
+bin/memory on         # tool + injection
+bin/memory auto off   # tool stays, injection stops (marker: ~/memory/.auto-off)
+bin/memory auto on    # injection resumes
 ```
 
-(Ongoing sessions keep their current state; the toggle is read when a
-session boots.)
+The same markers are toggled by the Orca sidebar panel (`memory-panel/` in
+this repo: a trusted-worker plugin whose worker owns the markers and mirrors
+CLI flips live).
+
+(Ongoing sessions keep their current state; the mode is read when a session
+boots.)
 
 ### Per-project (alternative)
 

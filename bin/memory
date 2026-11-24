@@ -1,12 +1,28 @@
 #!/bin/sh
-# memory on|off|status — toggle the markdown-memory auto-run for every session.
+# memory on|off|auto on|auto off|status — toggle markdown-memory for new sessions.
+# .disabled turns the engine off; .auto-off keeps the memory tool but no injection.
 set -u
 ROOT="${MEMORY_ROOT:-$HOME/memory}"
-MARK="$ROOT/.disabled"
+OFF_MARK="$ROOT/.disabled"
+AUTO_OFF_MARK="$ROOT/.auto-off"
+
+mode() {
+  if [ -f "$OFF_MARK" ]; then printf "memory: OFF"
+  else
+    printf "memory: ON"
+    [ -f "$AUTO_OFF_MARK" ] && printf ", auto-inject: OFF" || printf ", auto-inject: ON"
+  fi
+  printf "\n"
+}
 
 case "${1:-status}" in
-  off)   mkdir -p "$ROOT" && touch "$MARK" && echo "memory: OFF (new sessions will not inject or record; remove $MARK or run 'memory on' to re-enable)" ;;
-  on)    rm -f "$MARK" && echo "memory: ON" ;;
-  status) [ -f "$MARK" ] && echo "memory: OFF ($MARK present)" || echo "memory: ON" ;;
-  *) echo "usage: memory on|off|status" >&2; exit 2 ;;
+  on)   mkdir -p "$ROOT" && rm -f "$OFF_MARK" && mode ;;
+  off)  mkdir -p "$ROOT" && touch "$OFF_MARK" && mode ;;
+  auto) case "${2:-}" in
+          on)  rm -f "$AUTO_OFF_MARK" && mode ;;
+          off) mkdir -p "$ROOT" && touch "$AUTO_OFF_MARK" && mode ;;
+          *)   echo "usage: memory auto on|off" >&2; exit 2 ;;
+        esac ;;
+  status) mode ;;
+  *) echo "usage: memory on|off|auto on|auto off|status" >&2; exit 2 ;;
 esac

@@ -1,8 +1,6 @@
 import { tool } from "@opencode-ai/plugin"
 import { z } from "zod"
-import { existsSync } from "node:fs"
-import { join } from "node:path"
-import { memoryPaths, resolveProject, type Role } from "./lib/paths.ts"
+import { memoryPaths, memoryMode, resolveProject, type Role } from "./lib/paths.ts"
 import { buildInjection } from "./lib/inject.ts"
 import { save, updateSection, read, search, MemoryError, type Kind, type Status, type Section } from "./lib/store.ts"
 import { logMetric } from "./lib/metrics.ts"
@@ -18,9 +16,10 @@ export const MemoryEnginePlugin = async (input: { worktree: string; directory: s
   const opts = options ?? {}
   if (opts.disabled) return {}
   const paths = memoryPaths({ memoryRoot: opts.memoryRoot, worktree: input.worktree })
-  // Auto-run toggle: `memory off` drops a .disabled marker into the memory
-  // root; every new session stays inert until it is removed (`memory on`).
-  if (existsSync(join(paths.root, ".disabled"))) return {}
+  // Mode markers: `memory off` drops .disabled (engine inert); `memory auto off`
+  // drops .auto-off (memory tool stays, no injection). Both live in the memory root.
+  const mode = memoryMode(paths)
+  if (!mode.enabled) return {}
   const role: Role = opts.role ?? ((process.env.MEMORY_ROLE as Role) ?? "general")
   const budget = opts.injectBudgetChars ?? 4200
 
@@ -35,7 +34,7 @@ export const MemoryEnginePlugin = async (input: { worktree: string; directory: s
         // a duplicate block would double-charge and break cache stability.
         const already = output.system.some((s) => s.startsWith("External memory (engine: markdown-memory"))
         const before = output.system.reduce((n, s) => n + s.length, 0)
-        const inj = already ? null : buildInjection(paths, ref.slug, role, budget)
+        const inj = already || !mode.auto ? null : buildInjection(paths, ref.slug, role, budget)
         if (inj) output.system.push(inj.block)
         logMetric(paths, {
           ts: new Date().toISOString(),

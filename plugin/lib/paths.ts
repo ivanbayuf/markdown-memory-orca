@@ -13,6 +13,18 @@ export interface MemoryPaths {
   metricsDir: string
 }
 
+// Engine mode, read once per session start: `.disabled` turns memory off;
+// `.auto-off` keeps the memory tool but stops the system-prompt injection.
+export interface MemoryMode {
+  enabled: boolean
+  auto: boolean
+}
+
+export function memoryMode(paths: MemoryPaths): MemoryMode {
+  if (existsSync(join(paths.root, ".disabled"))) return { enabled: false, auto: false }
+  return { enabled: true, auto: !existsSync(join(paths.root, ".auto-off")) }
+}
+
 export function memoryPaths(opts?: { memoryRoot?: string; worktree?: string }): MemoryPaths {
   let root = opts?.memoryRoot ?? process.env.MEMORY_ROOT ?? join(homedir(), "memory")
   if (root === "~" || root.startsWith("~/")) root = join(homedir(), root.slice(1))
