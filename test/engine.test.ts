@@ -193,3 +193,19 @@ test("auto-run toggle: .disabled marker makes the plugin inert", async () => {
   assert.deepEqual(hooksOff, {})
   assert.ok(!existsSync(join(root, "PROJECTS")))
 })
+
+test("save: failed save leaves no HISTORY entry (regression 2026-11-24)", () => {
+  const root = tmp()
+  const paths = memoryPaths({ memoryRoot: root })
+  const ref = { slug: "p1", repoRoot: null, projectDir: "/x", path: join(root, "PROJECTS", "p1") }
+  save(paths, ref, { kind: "decision", content: "Original plan" })
+  const histBefore = readFileSync(join(ref.path, "HISTORY.md"), "utf8")
+  assert.equal((histBefore.match(/^## /gm) || []).length, 1)
+  assert.throws(() => save(paths, ref, { kind: "decision", content: "New plan", supersedes: "D-99" }), MemoryError)
+  const histAfter = readFileSync(join(ref.path, "HISTORY.md"), "utf8")
+  assert.equal(histAfter, histBefore, "failed supersede must not pollute HISTORY.md")
+  assert.ok(!histAfter.includes("New plan"))
+  const current = readFileSync(join(ref.path, "CURRENT.md"), "utf8")
+  assert.ok(current.includes("| D-01 |"))
+  assert.ok(!current.includes("New plan"))
+})
