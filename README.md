@@ -4,38 +4,47 @@
 
 [How it works](docs/HOW_IT_WORKS.md) · [Benchmark evidence](docs/BENCHMARKS.md) · [RTK and Graphify comparison](docs/COMPARISON.md)
 
-Shared file-based external memory for AI coding agents.
+Shared file-based external memory for AI coding agents: a notebook of plain Markdown under `~/memory` that agents write themselves and read on every request — so a new session is born knowing what the last one decided.
 
-## Problem → Why → How
+## The evidence
+
+Measured on opencode-go / GLM-5.3-Flash, fixtures in `benchmarks/` (2026-11-24):
+
+- **Constant overhead** — the injected block is 1,381 chars (~346 est. tokens) on a small project, capped at 4,200 (~1,050) on a large one, against a ~12.4k-token native system prompt.
+- **Byte-stable** — identical bytes across 10 consecutive requests per fixture; the hash busts on exactly one edit, then re-stabilizes, so the provider prompt cache keeps hitting.
+- **First turn pays once** — fresh input 18,289 → 1,170 tokens by turn 3, with 17,408 cache-read (−94% once the prefix is cached); a brand-new session in the same project re-hits the cache when memory is unchanged.
+- **Zero LLM calls** — every save, update and search is a deterministic script; nothing can hallucinate its own memory.
+- **Holds up** — 14 unit tests + 19/19 reliability checks (compaction, resume, roles, supersede, cross-project isolation, fail-open).
+
+Honest caveats: tokens are `ceil(chars/4)` estimates, not provider counts; cached tokens still cost ~10% of full price; and the n=3 A/B measured *higher* cost with memory — the pay-off is fewer re-orientation reads, tracked in real usage rather than claimed here. Full numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+## How it works
+
+A loop of three moves over one folder of Markdown:
+
+1. **Inject** — before every model request, `GLOBAL.md` + the project's `CURRENT.md` are pasted into the system prompt as a compact, byte-stable block.
+2. **Save** — during the session, the agent calls `memory save`: a timestamped line in `HISTORY.md` and a row/bullet in `CURRENT.md`. Decisions get auto-incremented IDs; superseding is explicit, never silent.
+3. **Recall** — `memory search` term-scores GLOBAL, HISTORY and ARCHIVE/ on demand; nothing older is loaded eagerly.
+
+Two layers make it host-agnostic: a pure **engine** (TypeScript over Markdown — no LLM calls, no provider APIs) plus a thin **adapter** per agent CLI (opencode implemented; Claude Code and Codex designed). Three modes via two marker files, toggled by `bin/memory` or the Orca Memory panel: **on** (inject + tool), **auto off** (tool only, no injection), **off**.
+
+Detail: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+
+## Why it exists
 
 **Problem.** A setup with many agents (UX bot, Dev bot, workers) across many sessions: every session starts blank. Each one re-reads files and re-derives context to orient — a ~12k-token native system prompt plus repeated exploration, paid again and again — and decisions made in one session or by one bot are lost to the next. Nothing persists; everything is re-derived or re-explained.
 
-**Why this solution** (and not the obvious alternatives):
+**Why this shape** (and not the obvious alternatives):
 
 - *Re-explaining manually* (static CLAUDE.md-style notes) — works, but manual, so it goes stale, and agents cannot update it themselves.
 - *Embeddings/RAG database* — durable, but heavy: infra, indexing, non-deterministic recall, and unreadable to humans.
 - *Reuse the chat transcript* (the markdown-memory-hermes approach) — wrong layer for this host: opencode has no pre-send seam to drop history, and a transcript is noise, not knowledge. Amnesia *between* sessions is not a transcript problem.
 
-That pins the requirements the design must satisfy: agents write it themselves (else stale), saving/recall are deterministic scripts with zero LLM calls (else it costs and hallucinates), the store is plain markdown (readable, editable, greppable, committable), the injection is a tiny byte-stable prefix (~200 tokens, constant) so provider prompt caches keep hitting instead of re-billing, and everything fails open — broken memory can never break a session.
-
-**How.** Two independent layers:
-
-1. **Engine** (`plugin/lib/`) — pure TypeScript over markdown, knows nothing about opencode. Project resolution → `~/memory/PROJECTS/<slug>/`; `save/update/read/search` (append-only HISTORY, auto-incremented decision IDs with explicit supersede, term-score search); injection builder (role-filtered, mtime-cached, content-hashed).
-2. **Adapter** (thin, per host) — opencode hooks: inject the block before every request, nudge compaction to preserve decisions, register the `memory` tool. Mounting is one symlink; the on/off/auto markers (`bin/memory`, or the Orca Memory panel) toggle whether the engine loads at all.
-
-**What is it:** an agent plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
-
-**Problem:** agents restart with no durable knowledge; every session re-reads files to re-orient, bloating context, and decisions made in one session or by one bot are lost to the next.
-
-**Goal:** compact role-aware project memory (CURRENT / HISTORY / ARCHIVE per project, GLOBAL preferences), deterministic updates with no extra LLM calls, on-demand retrieval, byte-stable injection so provider prompt caches keep hitting, reversible per-project install.
-
-**Impact:** ~200-token injection vs a ~12k-token native system prompt; cross-session prompt-cache hits verified on opencode-go; decisions persist with explicit supersede (never silently overwritten); 14 unit tests + 19 reliability checks including real compaction and cross-project isolation.
-
-**Measured 2026-11-24 (reproducible fixtures, `benchmarks/`):** injected block 1,381 chars (~346 est. tokens) small, 2,881 (~721) medium, capped at 4,200 (~1,050) large; byte-stable across 10 calls per fixture, hash busts on exactly one edit. Tokens are `ceil(chars/4)` estimates, not provider counts. The earlier 121–287-token range and the n=3 A/B (which measured *higher* cost with memory) are prior measurements, kept with their caveats in [Benchmark evidence](docs/BENCHMARKS.md).
+That pins the requirements the design must satisfy: agents write it themselves (else stale), saving/recall are deterministic scripts with zero LLM calls (else it costs and hallucinates), the store is plain markdown (readable, editable, greppable, committable), the injection is a tiny byte-stable prefix so provider prompt caches keep hitting instead of re-billing, and everything fails open — broken memory can never break a session.
 
 ## Not OpenCode-specific
 
-Correct — OpenCode is only the first *mounting point*. The engine is two
+OpenCode is only the first *mounting point*. The engine is two
 independent layers:
 
 1. **The engine** (`plugin/lib/`) is plain TypeScript + Node built-ins over
