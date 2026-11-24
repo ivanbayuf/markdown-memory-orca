@@ -1,6 +1,7 @@
 #!/bin/zsh
 # Phase 5: scripted A/B benchmark. BASE = --pure (plugin off), EXP = plugin on. 3 fresh sessions each.
 cd "${0:A:h}/.."
+export MEMORY_ROOT="$PWD/testbed/memory-root"
 TB="$PWD/testbed"; DB=~/.local/share/opencode/opencode.db
 P_HEAD="Read the files README.md and opencode.json in this project with the read tool."
 P_EXP="$P_HEAD Then use the memory tool: action=save kind=discovery content=(main files and their purpose). Then reply DONE."

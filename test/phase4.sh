@@ -5,6 +5,7 @@ PORT=4600
 BASE="http://127.0.0.1:$PORT"
 ROOT="$HOME/code/opencode-memory"
 TB="$ROOT/testbed"
+export MEMORY_ROOT="$TB/memory-root"
 METRICS="$TB/memory-root/.metrics/opencode.jsonl"
 PASS=0; FAIL=0
 ok()  { echo "PASS: $1"; PASS=$((PASS+1)) }
@@ -77,7 +78,6 @@ git init -q "$ROOT/testbed2" 2>/dev/null
 cat > "$ROOT/testbed2/opencode.json" <<EOF
 {
   "\$schema": "https://opencode.ai/config.json",
-  "plugin": [["$ROOT/plugin/memory-engine.ts", { "memoryRoot": "../testbed/memory-root" }]],
   "model": "opencode-go/glm-5.3-flash"
 }
 EOF

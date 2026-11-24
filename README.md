@@ -76,10 +76,25 @@ Sections wrapped in `<!-- memory:roles="ux,ui" --> ... <!-- /memory:roles -->`
 are injected only to matching roles; `orchestration` sees everything; untagged
 content is shared by all roles.
 
-## Install (per-project only)
+## Install
 
-In the project's `opencode.json` (never in `~/.config/opencode/opencode.json`
-until approved for production):
+### Global (all projects, including future ones — recommended)
+
+OpenCode auto-loads every plugin in `~/.config/opencode/plugins/`. One symlink
+activates memory everywhere, with no per-project configuration:
+
+```sh
+ln -sfn ~/code/opencode-memory/plugin/memory-engine.ts ~/.config/opencode/plugins/markdown-memory.ts
+```
+
+Back up that directory first (`cp -R ~/.config/opencode/plugins ~/.config/opencode-backups/`).
+To run isolated experiments without touching real memory, override the root
+per run: `MEMORY_ROOT=/tmp/mem-root opencode run …` (the env also beats
+`~/memory` inside the global mount). Rollback = delete the symlink.
+
+### Per-project (alternative)
+
+In the project's `opencode.json`:
 
 ```json
 {
@@ -87,9 +102,8 @@ until approved for production):
 }
 ```
 
-Options: `memoryRoot` (default `~/memory`), `role` (default `MEMORY_ROLE` env,
-else `general`), `injectBudgetChars` (default `4200` ≈ 1,050 tokens),
-`disabled` (true = plugin inert).
+Note: `~` expands inside `memoryRoot` (handled by the plugin), but the plugin
+*path* entry needs an absolute path. Rollback = remove the entry.
 
 ## Rollback
 
