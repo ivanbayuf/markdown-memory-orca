@@ -1,5 +1,13 @@
 # opencode-memory
 
+**What is it:** an OpenCode plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
+
+**Problem:** agents restart with no durable knowledge; every session re-reads files to re-orient, bloating context, and decisions made in one session or by one bot are lost to the next.
+
+**Goal:** compact role-aware project memory (CURRENT / HISTORY / ARCHIVE per project, GLOBAL preferences), deterministic updates with no extra LLM calls, on-demand retrieval, byte-stable injection so provider prompt caches keep hitting, reversible per-project install.
+
+**Impact:** ~200-token injection vs a ~12k-token native system prompt; cross-session prompt-cache hits verified on opencode-go; decisions persist with explicit supersede (never silently overwritten); 12 unit tests + 19 reliability checks including real compaction and cross-project isolation.
+
 Shared file-based external memory for OpenCode agents. Injects a compact,
 cache-stable memory block before every model request and exposes a `memory`
 tool (save / update / read / search). Storage is plain Markdown, shared with
