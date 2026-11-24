@@ -5,3 +5,6 @@ testbed2/
 .serve.log
 .*.json
 .DS_Store
+.memdead/
+.memdead/
+opencode.json
