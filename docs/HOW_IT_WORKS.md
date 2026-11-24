@@ -1,6 +1,6 @@
 # How markdown-memory-orca works
 
-![Injection, tool, and cache flow](../assets/flow.svg)
+![Injection, tool, and cache flow](../assets/flow.png)
 
 An OpenCode plugin that gives coding agents shared, file-based external
 memory — plain Markdown under `~/memory` — injected as a compact,

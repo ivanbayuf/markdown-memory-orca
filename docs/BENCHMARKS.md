@@ -2,7 +2,7 @@
 
 ## Measured 2026-11-24 (reproducible, engine-level fixtures)
 
-![Injected block by fixture size](../assets/benchmark-chart.svg)
+![Injected block by fixture size](../assets/benchmark-chart.png)
 
 Harness: `benchmarks/bench_orca.mjs` (imports `plugin/lib/` only, no
 OpenCode, no provider, no LLM), results in

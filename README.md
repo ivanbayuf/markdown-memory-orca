@@ -1,6 +1,6 @@
 # markdown-memory-orca
 
-![Project banner](assets/banner.svg)
+![Project banner](assets/banner.png)
 
 [How it works](docs/HOW_IT_WORKS.md) · [Benchmark evidence](docs/BENCHMARKS.md) · [RTK and Graphify comparison](docs/COMPARISON.md)
 
@@ -25,7 +25,7 @@ A notebook of plain Markdown under `~/memory` that agents write themselves and r
 2. **Save** — during the session, the agent calls `memory save`: a timestamped line in `HISTORY.md` and a row/bullet in `CURRENT.md`. Decisions get auto-incremented IDs; superseding is explicit, never silent.
 3. **Recall** — `memory search` term-scores GLOBAL, HISTORY and ARCHIVE/ on demand; nothing older is loaded eagerly.
 
-![Flow](assets/flow.svg)
+![Flow](assets/flow.png)
 
 Two layers make it host-agnostic: a pure **engine** (TypeScript over Markdown — no LLM calls, no provider APIs) plus a thin **adapter** per agent CLI (opencode implemented; Claude Code and Codex designed). Three modes via two marker files, toggled by `bin/memory` or the Orca Memory panel: **on** (inject + tool), **auto off** (tool only, no injection), **off**.
 
@@ -49,7 +49,7 @@ Measured on opencode-go / GLM-5.3-Flash, fixtures in `benchmarks/` (2026-11-24):
 - **Zero LLM calls** — every save, update and search is a deterministic script; nothing can hallucinate its own memory.
 - **Holds up** — 14 unit tests + 19/19 reliability checks (compaction, resume, roles, supersede, cross-project isolation, fail-open).
 
-![Benchmark chart](assets/benchmark-chart.svg)
+![Benchmark chart](assets/benchmark-chart.png)
 
 Honest caveats: tokens are `ceil(chars/4)` estimates, not provider counts; cached tokens still cost ~10% of full price; and the n=3 A/B measured *higher* cost with memory — the pay-off is fewer re-orientation reads, tracked in real usage rather than claimed here. Full numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
