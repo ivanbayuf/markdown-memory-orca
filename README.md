@@ -1,6 +1,8 @@
 # opencode-memory
 
-**What is it:** an OpenCode plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
+Shared file-based external memory for AI coding agents.
+
+**What is it:** an agent plugin that gives coding agents a shared, file-based external memory — plain Markdown under `~/memory` — injected as a compact, cache-stable block before every model request, plus a `memory` tool (save / update / read / search).
 
 **Problem:** agents restart with no durable knowledge; every session re-reads files to re-orient, bloating context, and decisions made in one session or by one bot are lost to the next.
 
@@ -8,10 +10,49 @@
 
 **Impact:** ~200-token injection vs a ~12k-token native system prompt; cross-session prompt-cache hits verified on opencode-go; decisions persist with explicit supersede (never silently overwritten); 12 unit tests + 19 reliability checks including real compaction and cross-project isolation.
 
-Shared file-based external memory for OpenCode agents. Injects a compact,
-cache-stable memory block before every model request and exposes a `memory`
-tool (save / update / read / search). Storage is plain Markdown, shared with
-future Claude Code and Codex integrations.
+## Not OpenCode-specific
+
+Correct — OpenCode is only the first *mounting point*. The engine is two
+independent layers:
+
+1. **The engine** (`plugin/lib/`) is plain TypeScript + Node built-ins over
+   Markdown files. It knows nothing about OpenCode, the model, or the provider:
+   project resolution, injection building, save/update/search, metrics.
+   Model-agnostic by construction: everything it does is deterministic text
+   processing — no LLM calls, no provider APIs.
+2. **A thin mounting adapter** per agent CLI that owns the hooks for that
+   tool. Each adapter is small because every major agent CLI already has a
+   hook system:
+
+| Agent CLI | Adapter status | Hook used |
+|---|---|---|
+| OpenCode | **implemented** (this repo) | `experimental.chat.system.transform` (V1 form of the V2 `session.hook("context")`), `experimental.session.compacting` |
+| Claude Code | designed, not implemented | `SessionStart` (+`compact` matcher), `UserPromptSubmit` |
+| Codex CLI | designed, not implemented | `hooks.json`: `SessionStart`, `PostCompact` |
+| Any model | works as-is | the block is plain prompt text; prompt caching is a bonus, not a requirement |
+
+Any IDE or orchestrator that drives those CLIs (terminal, TUI, or headless
+`run`/`serve` modes) gets the same memory, because the hooks fire in the CLI,
+not in the GUI.
+
+## How it differs from rtk and graphify
+
+The three tools solve different context problems and compose cleanly:
+
+| | This engine | rtk | graphify |
+|---|---|---|---|
+| Layer | **before every model request** (system prompt) | **at tool execution** (command output) | **on demand** (agent-invoked queries) |
+| Domain | durable *state*: what was decided, what's blocked, what's next | *the present*: compresses command/tool output tokens as they happen | *structure*: codebase/docs knowledge graph for query & explain |
+| Lifetime | cross-session, cross-bot | per command call | persisted index, queried per session |
+| Cost model | ~200-token stable prefix, cache-friendly | smaller tool results | one-off heavy queries, results are agent-read |
+
+Running together in one session: the memory block (this engine) orients the
+agent instantly; when it needs architecture understanding it queries graphify
+instead of re-reading the tree; every command it runs gets compressed by rtk.
+A natural loop: memory says "this was decided yesterday" → graphify answers
+"where does X live" → rtk keeps the tool output cheap → the agent saves the
+distilled conclusion back with `memory save discovery` (store the conclusion,
+never the whole graph or raw dumps).
 
 ## Storage
 
