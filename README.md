@@ -6,7 +6,40 @@
 
 Shared file-based external memory for AI coding agents: a notebook of plain Markdown under `~/memory` that agents write themselves and read on every request — so a new session is born knowing what the last one decided.
 
-## The evidence
+## Context
+
+A multi-agent setup: a UX bot, a Dev bot, orchestration workers — several agent CLIs, many projects, sessions that start and stop all day. Each session is stateless. The host gives it a ~12k-token native system prompt, and beyond that the agent must re-derive everything from the repo: read files, re-run searches, rebuild its picture of the project from scratch.
+
+## Problem
+
+Every session starts blank, and that costs twice:
+
+- **Re-orientation, every time.** Re-reading files and re-deriving context is paid again and again, in tokens and in latency, before any real work happens.
+- **Decisions die with the session.** What the Dev bot concluded today is invisible to the UX bot tomorrow — and to the Dev bot itself next week. Nothing persists; everything is re-explained or re-discovered.
+
+## Solution
+
+A notebook of plain Markdown under `~/memory` that agents write themselves and read on every request. Three moves, one folder:
+
+1. **Inject** — before every model request, `GLOBAL.md` + the project's `CURRENT.md` are pasted into the system prompt as a compact, byte-stable block.
+2. **Save** — during the session, the agent calls `memory save`: a timestamped line in `HISTORY.md` and a row/bullet in `CURRENT.md`. Decisions get auto-incremented IDs; superseding is explicit, never silent.
+3. **Recall** — `memory search` term-scores GLOBAL, HISTORY and ARCHIVE/ on demand; nothing older is loaded eagerly.
+
+![Flow](assets/flow.svg)
+
+Two layers make it host-agnostic: a pure **engine** (TypeScript over Markdown — no LLM calls, no provider APIs) plus a thin **adapter** per agent CLI (opencode implemented; Claude Code and Codex designed). Three modes via two marker files, toggled by `bin/memory` or the Orca Memory panel: **on** (inject + tool), **auto off** (tool only, no injection), **off**.
+
+**Why this shape** (and not the obvious alternatives):
+
+- *Re-explaining manually* (static CLAUDE.md-style notes) — works, but manual, so it goes stale, and agents cannot update it themselves.
+- *Embeddings/RAG database* — durable, but heavy: infra, indexing, non-deterministic recall, and unreadable to humans.
+- *Reuse the chat transcript* (the markdown-memory-hermes approach) — wrong layer for this host: opencode has no pre-send seam to drop history, and a transcript is noise, not knowledge. Amnesia *between* sessions is not a transcript problem.
+
+Those alternatives pin the requirements the design must satisfy: agents write it themselves (else stale), saving/recall are deterministic scripts with zero LLM calls (else it costs and hallucinates), the store is plain markdown (readable, editable, greppable, committable), the injection is a tiny byte-stable prefix so provider prompt caches keep hitting instead of re-billing, and everything fails open — broken memory can never break a session.
+
+Detail: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+
+## Impact
 
 Measured on opencode-go / GLM-5.3-Flash, fixtures in `benchmarks/` (2026-11-24):
 
@@ -16,35 +49,9 @@ Measured on opencode-go / GLM-5.3-Flash, fixtures in `benchmarks/` (2026-11-24):
 - **Zero LLM calls** — every save, update and search is a deterministic script; nothing can hallucinate its own memory.
 - **Holds up** — 14 unit tests + 19/19 reliability checks (compaction, resume, roles, supersede, cross-project isolation, fail-open).
 
-Honest caveats: tokens are `ceil(chars/4)` estimates, not provider counts; cached tokens still cost ~10% of full price; and the n=3 A/B measured *higher* cost with memory — the pay-off is fewer re-orientation reads, tracked in real usage rather than claimed here. Full numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
-
 ![Benchmark chart](assets/benchmark-chart.svg)
 
-## How it works
-
-![Flow](assets/flow.svg)
-
-A loop of three moves over one folder of Markdown:
-
-1. **Inject** — before every model request, `GLOBAL.md` + the project's `CURRENT.md` are pasted into the system prompt as a compact, byte-stable block.
-2. **Save** — during the session, the agent calls `memory save`: a timestamped line in `HISTORY.md` and a row/bullet in `CURRENT.md`. Decisions get auto-incremented IDs; superseding is explicit, never silent.
-3. **Recall** — `memory search` term-scores GLOBAL, HISTORY and ARCHIVE/ on demand; nothing older is loaded eagerly.
-
-Two layers make it host-agnostic: a pure **engine** (TypeScript over Markdown — no LLM calls, no provider APIs) plus a thin **adapter** per agent CLI (opencode implemented; Claude Code and Codex designed). Three modes via two marker files, toggled by `bin/memory` or the Orca Memory panel: **on** (inject + tool), **auto off** (tool only, no injection), **off**.
-
-Detail: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
-
-## Why it exists
-
-**Problem.** A setup with many agents (UX bot, Dev bot, workers) across many sessions: every session starts blank. Each one re-reads files and re-derives context to orient — a ~12k-token native system prompt plus repeated exploration, paid again and again — and decisions made in one session or by one bot are lost to the next. Nothing persists; everything is re-derived or re-explained.
-
-**Why this shape** (and not the obvious alternatives):
-
-- *Re-explaining manually* (static CLAUDE.md-style notes) — works, but manual, so it goes stale, and agents cannot update it themselves.
-- *Embeddings/RAG database* — durable, but heavy: infra, indexing, non-deterministic recall, and unreadable to humans.
-- *Reuse the chat transcript* (the markdown-memory-hermes approach) — wrong layer for this host: opencode has no pre-send seam to drop history, and a transcript is noise, not knowledge. Amnesia *between* sessions is not a transcript problem.
-
-That pins the requirements the design must satisfy: agents write it themselves (else stale), saving/recall are deterministic scripts with zero LLM calls (else it costs and hallucinates), the store is plain markdown (readable, editable, greppable, committable), the injection is a tiny byte-stable prefix so provider prompt caches keep hitting instead of re-billing, and everything fails open — broken memory can never break a session.
+Honest caveats: tokens are `ceil(chars/4)` estimates, not provider counts; cached tokens still cost ~10% of full price; and the n=3 A/B measured *higher* cost with memory — the pay-off is fewer re-orientation reads, tracked in real usage rather than claimed here. Full numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 ## Not OpenCode-specific
 
