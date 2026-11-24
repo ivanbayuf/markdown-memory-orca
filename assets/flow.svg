@@ -4,7 +4,7 @@
 <marker id="ah2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 z" fill="#38bdf8"/></marker></defs>
 <rect width="1500" height="560" fill="url(#bg)"/>
 <text x="40" y="58" font-family="sans-serif" font-size="32" font-weight="bold" fill="#ffffff">How a request flows through markdown-memory-orca</text>
-<text x="40" y="90" font-family="sans-serif" font-size="21" fill="#b2dcd6">Deterministic text processing — no extra LLM call. Memory files live under ~/memory.</text>
+<text x="40" y="90" font-family="sans-serif" font-size="21" fill="#b2dcd6">Deterministic text processing, no extra LLM call. Memory files live under ~/memory.</text>
 <rect x="40" y="130" width="320" height="120" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#4dd0c4" stroke-width="2"/><text x="62" y="174" font-family="sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Markdown files</text><text x="62" y="212" font-family="sans-serif" font-size="19" fill="#c8c8d7">GLOBAL.md · CURRENT.md</text>
 <rect x="480" y="130" width="320" height="120" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#4dd0c4" stroke-width="2"/><text x="502" y="174" font-family="sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Build injection</text><text x="502" y="212" font-family="sans-serif" font-size="19" fill="#c8c8d7">resolve · filter roles · budget</text>
 <rect x="920" y="130" width="540" height="120" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#4dd0c4" stroke-width="2"/><text x="942" y="174" font-family="sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Model request</text><text x="942" y="212" font-family="sans-serif" font-size="19" fill="#c8c8d7">system prompt + stable block</text>

@@ -1,6 +1,6 @@
 """Regenerate this repo's visual assets (banner, flow, benchmark chart).
 
-PNGs are drawn with PIL (DejaVu fonts) from the same layout constants as the
+PNGs are drawn with PIL (Liberation fonts) from the same layout constants as the
 SVGs; the SVGs are the editable source. Requires Pillow (`pip install pillow`)
 and the benchmark JSON in benchmarks/results/ (produced by the benchmark
 harness -- see benchmarks/README.md).
@@ -184,55 +184,152 @@ def flow_svg(cfg):
 '''
 
 
+# ---------------------------------------------------------------- charts
+# Design, 2026-11-24 (Impeccable + antislop during + UI/UX Pro Max):
+# Reading: README data charts for developers judging a context engine, in
+# each repo's established dark identity (Hermes purple/amber, Orca teal/cyan).
+# Dials ENERGY 2 / RHYTHM 2 / MOTION 1 (static images). One focal point per
+# chart: Hermes, the widening gap between a rising line and a flat one;
+# Orca, the large bar meeting the budget cap. Series are told apart by line
+# style, markers, and direct labels, never by hue alone (Pro Max chart
+# guidance). Numbers are only the measured values in the benchmark JSON.
+# No em dashes anywhere in chart copy (antislop R-02). Palette: two core
+# colors plus one accent per chart (R-29). Mono is used for measured figures
+# only, not as a technical costume. The takeaway is the title; there is no
+# eyebrow label above it (Impeccable craft floor).
+
+LIB = "/usr/share/fonts/truetype/liberation"
+
+
+def _f(name, size):
+    return ImageFont.truetype(f"{LIB}/{name}.ttf", size)
+
+
+FSANS = lambda s: _f("LiberationSans-Regular", s)  # noqa: E731
+FSANS_B = lambda s: _f("LiberationSans-Bold", s)  # noqa: E731
+FMONO = lambda s: _f("LiberationMono-Regular", s)  # noqa: E731
+FMONO_B = lambda s: _f("LiberationMono-Bold", s)  # noqa: E731
+
+CH_W, CH_H = 1500, 660
+
+
+def _chart_base(cfg):
+    img = vgrad(CH_W, CH_H, cfg["bg_top"], cfg["bg_bottom"])
+    d = ImageDraw.Draw(img, "RGBA")
+    d.text((90, 50), cfg["chart_title"], font=FSANS_B(36), fill=(255, 255, 255))
+    d.text((90, 100), cfg["chart_sub"], font=FSANS(20), fill=cfg["sub_color"])
+    return img, d
+
+
+def _segments(d, x, y, parts):
+    """Draw [(text, font, fill), ...] left to right on one baseline."""
+    for txt, fnt, fill in parts:
+        d.text((x, y), txt, font=fnt, fill=fill)
+        x += d.textlength(txt, font=fnt)
+    return x
+
+
+def _svg_esc(s):
+    from xml.sax.saxutils import escape as _esc
+    return _esc(s)
+
+
+def _chart_svg_head(cfg):
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="660" role="img" aria-label="{_svg_esc(cfg["chart_title"])}">'
+        f'<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="{cfg["bg_top_hex"]}"/><stop offset="1" stop-color="{cfg["bg_bottom_hex"]}"/></linearGradient></defs>'
+        f'<rect width="1500" height="660" fill="url(#bg)"/>'
+        f'<text x="90" y="84" font-family="Liberation Sans, Arial, sans-serif" font-size="36" font-weight="bold" fill="#ffffff">{_svg_esc(cfg["chart_title"])}</text>'
+        f'<text x="90" y="122" font-family="Liberation Sans, Arial, sans-serif" font-size="20" fill="{cfg["sub_hex"]}">{_svg_esc(cfg["chart_sub"])}</text>'
+    )
+
+
 def orca_chart(data):
-    W, H = 1500, 640
-    img = Image.new("RGB", (W, H), (255, 255, 255))
-    d = ImageDraw.Draw(img)
-    d.text((60, 28), "Injected memory block — estimated tokens by fixture size", font=F_BOLD(30), fill=(20, 20, 30))
-    d.text((60, 68), "Node v24.22.1  ·  budget 4,200 chars  ·  tokens = ceil(chars / 4), an estimate  ·  2026-11-24", font=F_REG(21), fill=(90, 90, 110))
-    L, R, T, Bo = 110, 1440, 130, 500
+    cfg = ORCA
+    img, d = _chart_base(cfg)
+    L, R, T, Bo = 90, 1420, 180, 500
     ymax = 1200
-    def Y(v): return Bo - (Bo - T) * v / ymax
-    for v in range(0, 1201, 200):
-        d.line([(L, Y(v)), (R, Y(v))], fill=(230, 230, 235), width=1)
-        d.text((58, Y(v) - 11), f"{v:,}", font=F_REG(18), fill=(120, 120, 135))
     fx = data["fixtures"]
-    bw = 220
+
+    def Y(v):
+        return Bo - (Bo - T) * v / ymax
+
+    for v in (0, 400, 800, 1200):
+        d.line([(L, Y(v)), (R, Y(v))], fill=(255, 255, 255, 22), width=1)
+        d.text((78, Y(v) - 11), f"{v:,}", font=FMONO(18), fill=cfg["sub_color"], anchor="ra")
+    # budget cap, dashed white
+    cy = Y(1050)
+    x = L
+    while x < R:
+        d.line([(x, cy), (min(x + 16, R), cy)], fill=(255, 255, 255), width=3)
+        x += 26
+    d.text((96, cy - 36), "Budget cap: 4,200 chars", font=FSANS_B(20), fill=(255, 255, 255))
     xs = [300, 700, 1100]
-    cols = [(13, 110, 122), (13, 110, 122), (13, 110, 122)]
-    for x, f, c in zip(xs, fx, cols):
+    bw = 230
+    for cx, f in zip(xs, fx):
         v = f["injected_tokens_estimate_chars_div_4"]
-        d.rectangle([x, Y(v), x + bw, Bo], fill=c)
-        if f["fixture"] == "large":
-            d.text((x + 58, Y(v) + 14), f"~{v:,}", font=F_BOLD(26), fill=(255, 255, 255))
-        else:
-            d.text((x + 8, Y(v) - 36), f"~{v:,}", font=F_BOLD(26), fill=(13, 110, 122))
-        d.text((x, Bo + 14), f"{f['fixture']}  ({f['current_md_chars']:,} chars in CURRENT.md)", font=F_REG(20), fill=(60, 60, 75))
-    # budget cap line at 1050
-    d.line([(L, Y(1050)), (R, Y(1050))], fill=(214, 48, 49), width=3)
-    d.text((L + 8, Y(1050) - 34), "budget cap: 4,200 chars ≈ 1,050 est. tokens", font=F_BOLD(20), fill=(214, 48, 49))
-    d.rounded_rectangle([60, 548, 1440, 622], radius=12, outline=(200, 200, 210), width=1)
-    d.text((84, 564), "Byte-stable across 10 calls per fixture; hash busts on exactly one edit, then re-stabilises.", font=F_REG(19), fill=(20, 20, 30))
-    d.text((84, 590), "Native system prompt ≈ 12,400 tokens (prior README measurement) — injection is 2.8–8.5% of that.", font=F_REG(19), fill=(20, 20, 30))
+        d.rectangle([cx - bw // 2, Y(v), cx + bw // 2, Bo], fill=cfg["accent"])
+        d.text((cx, Y(v) - 42), f"~{v:,}", font=FMONO_B(28), fill=(255, 255, 255), anchor="ma")
+        d.text((cx, 516), f["fixture"].capitalize(), font=FSANS_B(22), fill=(255, 255, 255), anchor="ma")
+        d.text((cx, 544), f"{f['current_md_chars']:,} chars in CURRENT.md", font=FSANS(18), fill=cfg["sub_color"], anchor="ma")
+    d.line([(90, 576), (1420, 576)], fill=(255, 255, 255, 28), width=1)
+    d.text((90, 598), "Byte stable across 10 calls per fixture. One cache bust per edit, then stable again.", font=FSANS(20), fill=(255, 255, 255))
+    d.text((90, 626), "Native system prompt about 12,400 tokens (prior README measurement).", font=FSANS(18), fill=cfg["sub_color"])
     return img
 
+
+def orca_chart_svg(data):
+    cfg = ORCA
+    L, R, T, Bo = 90, 1420, 180, 500
+    ymax = 1200
+    fx = data["fixtures"]
+
+    def Y(v):
+        return Bo - (Bo - T) * v / ymax
+
+    out = [_chart_svg_head(cfg)]
+    for v in (0, 400, 800, 1200):
+        out.append(f'<line x1="{L}" y1="{Y(v):.1f}" x2="{R}" y2="{Y(v):.1f}" stroke="#ffffff" stroke-opacity="0.12"/>')
+        out.append(f'<text x="78" y="{Y(v) + 6:.1f}" font-family="monospace" font-size="18" fill="{cfg["sub_hex"]}" text-anchor="end">{v:,}</text>')
+    out.append(f'<line x1="{L}" y1="{Y(1050):.1f}" x2="{R}" y2="{Y(1050):.1f}" stroke="#ffffff" stroke-width="3" stroke-dasharray="16 10"/>')
+    out.append(f'<text x="96" y="{Y(1050) - 14:.1f}" font-family="Liberation Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Budget cap: 4,200 chars</text>')
+    xs = [300, 700, 1100]
+    bw = 230
+    for cx, f in zip(xs, fx):
+        v = f["injected_tokens_estimate_chars_div_4"]
+        out.append(f'<rect x="{cx - bw // 2}" y="{Y(v):.1f}" width="{bw}" height="{Bo - Y(v):.1f}" fill="{cfg["accent_hex"]}"/>')
+        out.append(f'<text x="{cx}" y="{Y(v) - 14:.1f}" font-family="monospace" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">~{v:,}</text>')
+        out.append(f'<text x="{cx}" y="534" font-family="Liberation Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">{f["fixture"].capitalize()}</text>')
+        out.append(f'<text x="{cx}" y="562" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="{cfg["sub_hex"]}" text-anchor="middle">{f["current_md_chars"]:,} chars in CURRENT.md</text>')
+    out.append('<line x1="90" y1="576" x2="1420" y2="576" stroke="#ffffff" stroke-opacity="0.15"/>')
+    out.append('<text x="90" y="618" font-family="Liberation Sans, Arial, sans-serif" font-size="20" fill="#ffffff">Byte stable across 10 calls per fixture. One cache bust per edit, then stable again.</text>')
+    out.append(f'<text x="90" y="644" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="{cfg["sub_hex"]}">Native system prompt about 12,400 tokens (prior README measurement).</text>')
+    out.append("</svg>")
+    return "\n".join(out) + "\n"
 
 ORCA = {
     "bg_top": (7, 24, 39), "bg_bottom": (14, 47, 66), "glow": (45, 212, 191), "glow2": (56, 189, 248),
     "accent": (77, 208, 196), "accent2": (56, 189, 248), "sub_color": (178, 220, 214), "muted": (120, 160, 175),
     "pill": "MARKDOWN-MEMORY  ·  OPENCODE PLUGIN (ORCA)",
     "line1": "Shared memory.", "line2": "Less reorientation.",
-    "sub": "Durable project memory in plain Markdown —", "sub2": "injected before every request, cache-stable.",
-    "card_title": "CURRENT.md — project memory",
+    "sub": "Durable project memory in plain Markdown,", "sub2": "injected before every request, cache-stable.",
+    "card_title": "CURRENT.md: project memory",
     "card_lines": [("## Decisions", "#E6F4F1"), ("| D-01 | … | confirmed |", "#B2DCD6"), ("## Blockers", "#E6F4F1"), ("## Next steps", "#E6F4F1"), ("## Notes", "#E6F4F1")],
     "card_foot": "4,200 chars max · byte-stable block",
     "url": "github.com/ivanbayuf/markdown-memory-orca",
     "aria": "markdown-memory-orca banner: shared memory, less reorientation",
     "title": "How a request flows through markdown-memory-orca",
-    "subtitle": "Deterministic text processing — no extra LLM call. Memory files live under ~/memory.",
+    "subtitle": "Deterministic text processing, no extra LLM call. Memory files live under ~/memory.",
     "boxes": [("Markdown files", "GLOBAL.md · CURRENT.md"), ("Build injection", "resolve · filter roles · budget"), ("Model request", "system prompt + stable block")],
     "row2": [("memory tool", "save · update · read · search"), ("PROJECTS/<slug>/", "CURRENT · HISTORY · ARCHIVE"), ("Prompt cache", "same block → cache hits")],
-    "elbow_label": "model calls the memory tool",
+        "elbow_label": "model calls the memory tool",
+    "chart_title": "Overhead stays capped as memory grows.",
+    "chart_sub": "Injected block, estimated tokens by fixture size. Tokens are ceil(chars / 4), an estimate. Node v24.22.1, 2026-11-24.",
+    "accent_hex": "#4DD0C4",
+    "bg_top_hex": "#071827",
+    "bg_bottom_hex": "#0E2F42",
+    "sub_hex": "#B2DCD6",
 }
 HEX = lambda t: "#%02x%02x%02x" % t
 
@@ -251,6 +348,7 @@ def main():
     (assets / "flow.svg").write_text(flow_svg(ORCA))
     data = json.loads((root / "benchmarks" / "results" / "orca-2026-11-24.json").read_text())
     orca_chart(data).save(assets / "benchmark-chart.png")
+    (assets / "benchmark-chart.svg").write_text(orca_chart_svg(data))
     print("assets written to", assets)
 
 
