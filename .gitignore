@@ -1,0 +1,7 @@
+node_modules/
+testbed/
+testbed2/
+.*.out
+.serve.log
+.*.json
+.DS_Store
