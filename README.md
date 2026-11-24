@@ -137,6 +137,58 @@ under `~/memory` are never deleted by the plugin (HISTORY is append-only).
 - All hooks and the tool fail open: any error logs to the opencode log and the
   native context proceeds untouched.
 
+## Benchmark
+
+All numbers measured on opencode-go / GLM-5.3-Flash; harness in `test/`.
+
+### Injection overhead (measured)
+
+- Injected block: **121–287 tokens** per request (mean ≈ 210) against a
+  ~12.4k-token native system prompt — **≈ 1.7% of prompt size**, constant.
+- Zero extra LLM calls: memory writes and search are deterministic scripts.
+
+### Prompt-cache behavior (measured)
+
+The injected block is byte-stable until a memory file changes, so provider
+prompt caches keep hitting:
+
+- Example session (turns 1→3): fresh input **18,289 → 1,170 tokens**, with
+  **17,408 cache-read** on the final turn (−94% fresh input once the prefix is
+  cached).
+- Cross-session hits: a brand-new session in the same project re-hits the
+  cache when the memory block is unchanged (same content hash).
+- A memory write busts the cache for exactly one request, then hits resume —
+  verified deliberately (mid-session decision save).
+- Honest caveats: `cache.write` is never reported by this provider, and **a
+  cache hit is not a saving** — cached tokens still cost ~10% of full price.
+
+### A/B micro-benchmark (n = 3, scripted tasks)
+
+| Metric | Baseline (`--pure`) | With memory |
+|---|---|---|
+| Sessions / turns | 3 / 6 | 3 / 9 (+1 memory-write turn per session) |
+| Input tokens | 50,820 | 72,516 |
+| Cache-read tokens | 48,960 | 93,584 |
+| Mean input / turn | 8,470 | 8,057 |
+| Cost | $0.0093 | $0.0140 |
+| Tool calls | read ×6 | read ×6 + memory ×3, 0 errors |
+| Reliability checks | — | 19/19 (compaction, resume, roles, supersede, isolation, fail-open) |
+
+Read this honestly: the variants do different work (the memory variant also
+writes a discovery), n = 3 is noise, and the with-memory cost is *higher* in
+this shape. The injection overhead is real and constant; the pay-off has to
+come from agents skipping repeated re-orientation (fewer file re-reads and
+fewer sessions per task), which is tracked separately during real-world pilot
+usage rather than claimed from this micro-benchmark.
+
+### Reproduce
+
+```sh
+node --test test/     # 13 unit tests
+./test/phase4.sh      # 19 reliability checks
+./test/phase5.sh      # A/B benchmark (writes to testbed only)
+```
+
 ## Tests
 
 ```sh
