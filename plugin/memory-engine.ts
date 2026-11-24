@@ -1,9 +1,11 @@
 import { tool } from "@opencode-ai/plugin"
 import { z } from "zod"
+import { existsSync } from "node:fs"
+import { join } from "node:path"
 import { memoryPaths, resolveProject, type Role } from "./lib/paths.ts"
-import { buildInjection } from "./lib/inject"
-import { save, updateSection, read, search, MemoryError, type Kind, type Status, type Section } from "./lib/store"
-import { logMetric } from "./lib/metrics"
+import { buildInjection } from "./lib/inject.ts"
+import { save, updateSection, read, search, MemoryError, type Kind, type Status, type Section } from "./lib/store.ts"
+import { logMetric } from "./lib/metrics.ts"
 
 export interface MemoryEngineOptions {
   memoryRoot?: string
@@ -16,6 +18,9 @@ export const MemoryEnginePlugin = async (input: { worktree: string; directory: s
   const opts = options ?? {}
   if (opts.disabled) return {}
   const paths = memoryPaths({ memoryRoot: opts.memoryRoot, worktree: input.worktree })
+  // Auto-run toggle: `memory off` drops a .disabled marker into the memory
+  // root; every new session stays inert until it is removed (`memory on`).
+  if (existsSync(join(paths.root, ".disabled"))) return {}
   const role: Role = opts.role ?? ((process.env.MEMORY_ROLE as Role) ?? "general")
   const budget = opts.injectBudgetChars ?? 4200
 

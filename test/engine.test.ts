@@ -180,3 +180,16 @@ test("supersede works when decision text contains escaped pipes", () => {
   assert.ok(current.includes("superseded by D-02"))
   assert.ok(current.includes("Use Bun, not npm \\| ever"))
 })
+
+test("auto-run toggle: .disabled marker makes the plugin inert", async () => {
+  const { existsSync, writeFileSync } = await import("node:fs")
+  const { join } = await import("node:path")
+  const { MemoryEnginePlugin } = await import("../plugin/memory-engine.ts")
+  const root = tmp()
+  const hooksOn = await MemoryEnginePlugin({ worktree: "/w", directory: "/w" }, { memoryRoot: root })
+  assert.ok(hooksOn && Object.keys(hooksOn).length >= 2)
+  writeFileSync(join(root, ".disabled"), "")
+  const hooksOff = await MemoryEnginePlugin({ worktree: "/w", directory: "/w" }, { memoryRoot: root })
+  assert.deepEqual(hooksOff, {})
+  assert.ok(!existsSync(join(root, "PROJECTS")))
+})

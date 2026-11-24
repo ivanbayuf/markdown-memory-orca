@@ -92,6 +92,20 @@ To run isolated experiments without touching real memory, override the root
 per run: `MEMORY_ROOT=/tmp/mem-root opencode run …` (the env also beats
 `~/memory` inside the global mount). Rollback = delete the symlink.
 
+### Auto-run toggle
+
+Turn the global mount on or off for every future session — no symlink
+surgery, no restarts:
+
+```sh
+bin/memory off      # new sessions stay fully native (marker: ~/memory/.disabled)
+bin/memory on       # re-enable
+bin/memory status
+```
+
+(Ongoing sessions keep their current state; the toggle is read when a
+session boots.)
+
 ### Per-project (alternative)
 
 In the project's `opencode.json`:

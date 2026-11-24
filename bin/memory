@@ -1,0 +1,12 @@
+#!/bin/sh
+# memory on|off|status — toggle the markdown-memory auto-run for every session.
+set -u
+ROOT="${MEMORY_ROOT:-$HOME/memory}"
+MARK="$ROOT/.disabled"
+
+case "${1:-status}" in
+  off)   mkdir -p "$ROOT" && touch "$MARK" && echo "memory: OFF (new sessions will not inject or record; remove $MARK or run 'memory on' to re-enable)" ;;
+  on)    rm -f "$MARK" && echo "memory: ON" ;;
+  status) [ -f "$MARK" ] && echo "memory: OFF ($MARK present)" || echo "memory: ON" ;;
+  *) echo "usage: memory on|off|status" >&2; exit 2 ;;
+esac
