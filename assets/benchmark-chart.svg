@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="660" role="img" aria-label="Overhead stays capped as memory grows."><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#071827"/><stop offset="1" stop-color="#0e2f42"/></linearGradient></defs><rect width="1500" height="660" fill="url(#bg)"/><text x="90" y="84" font-family="Liberation Sans, Arial, sans-serif" font-size="36" font-weight="bold" fill="#ffffff">Overhead stays capped as memory grows.</text><text x="90" y="122" font-family="Liberation Sans, Arial, sans-serif" font-size="20" fill="#b2dcd6">Injected block, estimated tokens by fixture size. Tokens are ceil(chars / 4), an estimate. Node v24.22.1, 2026-11-24.</text>
+<line x1="90" y1="500.0" x2="1420" y2="500.0" stroke="#ffffff" stroke-opacity="0.12"/>
+<text x="78" y="506.0" font-family="monospace" font-size="18" fill="#b2dcd6" text-anchor="end">0</text>
+<line x1="90" y1="393.3" x2="1420" y2="393.3" stroke="#ffffff" stroke-opacity="0.12"/>
+<text x="78" y="399.3" font-family="monospace" font-size="18" fill="#b2dcd6" text-anchor="end">400</text>
+<line x1="90" y1="286.7" x2="1420" y2="286.7" stroke="#ffffff" stroke-opacity="0.12"/>
+<text x="78" y="292.7" font-family="monospace" font-size="18" fill="#b2dcd6" text-anchor="end">800</text>
+<line x1="90" y1="180.0" x2="1420" y2="180.0" stroke="#ffffff" stroke-opacity="0.12"/>
+<text x="78" y="186.0" font-family="monospace" font-size="18" fill="#b2dcd6" text-anchor="end">1,200</text>
+<line x1="90" y1="220.0" x2="1420" y2="220.0" stroke="#ffffff" stroke-width="3" stroke-dasharray="16 10"/>
+<text x="96" y="206.0" font-family="Liberation Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Budget cap: 4,200 chars</text>
+<rect x="185" y="407.7" width="230" height="92.3" fill="#4dd0c4"/>
+<text x="300" y="393.7" font-family="monospace" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">~346</text>
+<text x="300" y="534" font-family="Liberation Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">Small</text>
+<text x="300" y="562" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="#b2dcd6" text-anchor="middle">721 chars in CURRENT.md</text>
+<rect x="585" y="307.7" width="230" height="192.3" fill="#4dd0c4"/>
+<text x="700" y="293.7" font-family="monospace" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">~721</text>
+<text x="700" y="534" font-family="Liberation Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">Medium</text>
+<text x="700" y="562" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="#b2dcd6" text-anchor="middle">2,221 chars in CURRENT.md</text>
+<rect x="985" y="220.0" width="230" height="280.0" fill="#4dd0c4"/>
+<text x="1100" y="206.0" font-family="monospace" font-size="28" font-weight="bold" fill="#ffffff" text-anchor="middle">~1,050</text>
+<text x="1100" y="534" font-family="Liberation Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">Large</text>
+<text x="1100" y="562" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="#b2dcd6" text-anchor="middle">4,021 chars in CURRENT.md</text>
+<line x1="90" y1="576" x2="1420" y2="576" stroke="#ffffff" stroke-opacity="0.15"/>
+<text x="90" y="618" font-family="Liberation Sans, Arial, sans-serif" font-size="20" fill="#ffffff">Byte stable across 10 calls per fixture. One cache bust per edit, then stable again.</text>
+<text x="90" y="644" font-family="Liberation Sans, Arial, sans-serif" font-size="18" fill="#b2dcd6">Native system prompt about 12,400 tokens (prior README measurement).</text>
+</svg>
