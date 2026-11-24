@@ -1,4 +1,4 @@
-# opencode-memory
+# markdown-memory-orca
 
 Shared file-based external memory for AI coding agents.
 
